@@ -21,4 +21,4 @@ The Temperature in K. For clarity, the Earth was placed nearby the origin, but s
 ![exoplanetsbubblecharthabitable_logscale222](https://user-images.githubusercontent.com/16411126/30125836-729b72e8-9342-11e7-86c5-5cb08459b694.png)
 
 
-![Dynamic Exoplanet Visualization](/Exoplanet Dynamic Feature Selection.png)
+![Dynamic Exoplanet Visualization](/Exoplanet_Dynamic_Feature_Selection.png)
