@@ -9552,3 +9552,76 @@
   });
   if (typeof define === "function" && define.amd) this.d3 = d3, define(d3); else if (typeof module === "object" && module.exports) module.exports = d3; else this.d3 = d3;
 }();
+
+
+d3.slingshot = function(params) {
+  // Use the provided parameters or sensible defaults.
+  var initialSpeed = params.initialSpeed != null ? params.initialSpeed : 10000; // in m/s
+  var targetSpeed  = params.targetSpeed  != null ? params.targetSpeed  : 299792458; // speed of light (m/s)
+  var accelerationFactor = params.accelerationFactor != null ? params.accelerationFactor : 1.05; // 5% per assist
+  var planets = params.planets || [ "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune" ];
+  var timePerAssist = params.timePerAssist != null ? params.timePerAssist : 86400; // default: one day (in seconds)
+  
+  // Calculate the number of assists (rounded up)
+  var numAssists = Math.ceil(Math.log(targetSpeed / initialSpeed) / Math.log(accelerationFactor));
+  
+  // Determine which planet is “used” at each assist (cycling through the list)
+  var usedPlanets = [];
+  for (var i = 0; i < numAssists; i++) {
+    usedPlanets.push(planets[i % planets.length]);
+  }
+  
+  // Total time is a simple multiple of timePerAssist
+  var totalTime = numAssists * timePerAssist;
+  
+  // You might also calculate the final speed based on the number of assists.
+  // For example (fictitiously):
+  var finalSpeed = initialSpeed * Math.pow(accelerationFactor, numAssists);
+  
+  return {
+    initialSpeed: initialSpeed,
+    targetSpeed: targetSpeed,
+    finalSpeed: finalSpeed,
+    numAssists: numAssists,
+    usedPlanets: usedPlanets,
+    totalTime: totalTime // in seconds
+  };
+};
+
+/*
+ * (Optional) A helper function to pretty‐print the result in human–readable units
+ * such as days.
+ */
+d3.slingshotReport = function(result) {
+  function formatTime(seconds) {
+    var days = Math.floor(seconds / 86400);
+    var hours = Math.floor((seconds % 86400) / 3600);
+    var minutes = Math.floor((seconds % 3600) / 60);
+    return days + " days, " + hours + " hours, " + minutes + " minutes";
+  }
+  return "Starting speed: " + result.initialSpeed + " m/s\n" +
+         "Target speed (light speed): " + result.targetSpeed + " m/s\n" +
+         "Final speed after assists: " + result.finalSpeed.toFixed(2) + " m/s\n" +
+         "Number of assists required: " + result.numAssists + "\n" +
+         "Planets used: " + result.usedPlanets.join(", ") + "\n" +
+         "Total time: " + formatTime(result.totalTime);
+};
+
+/*
+ * Example usage:
+ * You can now call this function from your application code.
+ * For example:
+ *
+ *   var params = {
+ *     initialSpeed: 10000,       // starting speed in m/s
+ *     targetSpeed: 299792458,      // speed of light in m/s
+ *     accelerationFactor: 1.05,    // each assist boosts speed by 5%
+ *     planets: ["Venus", "Earth", "Mars", "Jupiter"],
+ *     timePerAssist: 86400         // one day per assist (in seconds)
+ *   };
+ *   var result = d3.slingshot(params);
+ *   console.log(d3.slingshotReport(result));
+ *
+ * You could also visualize these results with D3 (for example as a bar chart or text)
+ * using the rest of your D3 visualization code.
+ */

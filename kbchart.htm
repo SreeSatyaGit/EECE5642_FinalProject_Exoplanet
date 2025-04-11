@@ -1,28 +1,175 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <title>Dynamic Exoplanet Visualization</title>
+    <!-- Load Google Charts -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <!-- Load data table (kbchart variable) from external file -->
     <script src="kbchart.js"></script>
+    
     <script type="text/javascript">
+      // Load the Google charts corechart package:
       google.charts.load("current", {packages:["corechart"]});
-      google.charts.setOnLoadCallback(drawSeriesChart);
-      function drawSeriesChart() {
-        var data = google.visualization.arrayToDataTable(kbchart);
+      google.charts.setOnLoadCallback(initChart);
 
-        var options = {
-          title: 'Exoplanets in comparison to Earth.  (Color = planet temperature)',
-          hAxis: {title: 'Distance to the planetary system (parsecs)', logScale: true},
-          vAxis: {title: 'Planet Mass (Earth mass)', logScale: true},
+      // Global variable to hold the Google Chart instance.
+      var chart, data, options;
+      
+      // Define available columns (data index mapping)
+      // The kbchart array header is assumed as:
+      //  0: Planet Name
+      //  1: Distance
+      //  2: Mass
+      //  3: Temp.
+      //  4: Radius
+      //  5: Slingshot Boost
+      var columnLabels = ["Distance", "Mass", "Temp.", "Radius", "Slingshot Boost"];
+
+      // When chart and controls are loaded, initialize the chart and the selector controls.
+      function initChart() {
+        // Build initial visualization using default selections.
+        // Default: x: Distance (col 1), y: Mass (col 2),
+        //          bubble size: Temp. (col 3), bubble color: Radius (col 4)
+        document.getElementById("xSelect").value = "1"; // Distance
+        document.getElementById("ySelect").value = "2"; // Mass
+        document.getElementById("sizeSelect").value = "3"; // Temp.
+        document.getElementById("colorSelect").value = "4"; // Radius
+
+        // Initial drawing:
+        updateChart();
+
+        // Create the chart instance in the given chart div.
+        chart = new google.visualization.BubbleChart(document.getElementById('chart_div'));
+      }
+
+      // This function reconstructs the data table from kbchart with new column mapping
+      // based on the user-selected indices.
+      function updateChart() {
+        // Get the selected column indices from the dropdowns.
+        // (Numbers are stored as string; convert to int.)
+        var xIndex = parseInt(document.getElementById("xSelect").value);
+        var yIndex = parseInt(document.getElementById("ySelect").value);
+        var sizeIndex = parseInt(document.getElementById("sizeSelect").value);
+        var colorIndex = parseInt(document.getElementById("colorSelect").value);
+
+        // Create a new header row for the data table.
+        // The first column is fixed as "Planet Name".
+        var newHeader = ["Planet Name",
+                         columnLabels[xIndex - 1],
+                         columnLabels[yIndex - 1],
+                         "Bubble Size",
+                         "Bubble Color",
+                         "Tooltip"]; // tooltip shows Planet Name
+        // Start assembling newData as an array-of-arrays.
+        var newData = [];
+        newData.push(newHeader);
+
+        // The kbchart data array is assumed to be available globally (from kbchart.js)
+        // Start at index 1 (skip header row)
+        for (var i = 1; i < kbchart.length; i++) {
+          var row = kbchart[i];
+
+          // Ensure the row has enough data.
+          if (row.length < 5) continue;  // skip incomplete rows
+
+          // Build a new row. Note:
+          // - The planet name is in kbchart[i][0]
+          // - The selected values come from the chosen indices. Since our user selection
+          //   chooses among columns 1..5, we use row[xIndex], row[yIndex] etc.
+          var newRow = [];
+          newRow.push(row[0]); // Planet Name
+
+          newRow.push(row[xIndex]);   // x axis data
+          newRow.push(row[yIndex]);   // y axis data
+          newRow.push(row[sizeIndex]);  // bubble size
+          newRow.push(row[colorIndex]); // bubble color
+
+          // For tooltip, we use the planet name (or any additional text you wish).
+          newRow.push(row[0]);
+          newData.push(newRow);
+        }
+
+        // Now rebuild the chart using the newData.
+        data = google.visualization.arrayToDataTable(newData);
+
+        // Build options. Use the selected column labels for axis titles.
+        options = {
+          title: 'Exoplanets in Comparison to Earth. (Color = ' +
+                 columnLabels[colorIndex - 1] + ')',
+          hAxis: {title: columnLabels[xIndex - 1], logScale: true},
+          vAxis: {title: columnLabels[yIndex - 1], logScale: true},
           bubble: {textStyle: {fontSize: 11, auraColor: 'none'}},
-
           colorAxis: {colors: ['CornflowerBlue', 'LightGreen', 'Yellow', 'OrangeRed']}
         };
 
-        var chart = new google.visualization.BubbleChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
+        // If the chart has already been drawn, update it.
+        if (chart) {
+          chart.draw(data, options);
+        }
       }
     </script>
+    
+    <style>
+      body { font-family: Arial, sans-serif; }
+      #controls { margin-bottom: 15px; }
+      select { font-size: 14px; margin: 0 5px; }
+      button { font-size: 14px; margin-left: 15px; }
+    </style>
   </head>
   <body>
+    <h2>Exoplanet Visualization with Dynamic Feature Selection</h2>
+    <!-- Dropdown controls -->
+    <div id="controls">
+      <label for="xSelect">X Axis:</label>
+      <select id="xSelect">
+        <!-- Options: values 1 to 5 correspond to columns 1:'Distance', 2:'Mass', 3:'Temp.', 4:'Radius', 5:'Slingshot Boost' -->
+        <option value="1">Distance</option>
+        <option value="2">Mass</option>
+        <option value="3">Temp.</option>
+        <option value="4">Radius</option>
+        <option value="5">Slingshot Boost</option>
+      </select>
+
+      <label for="ySelect">Y Axis:</label>
+      <select id="ySelect">
+        <option value="1">Distance</option>
+        <option value="2">Mass</option>
+        <option value="3">Temp.</option>
+        <option value="4">Radius</option>
+        <option value="5">Slingshot Boost</option>
+      </select>
+
+      <label for="sizeSelect">Bubble Size:</label>
+      <select id="sizeSelect">
+        <option value="1">Distance</option>
+        <option value="2">Mass</option>
+        <option value="3">Temp.</option>
+        <option value="4">Radius</option>
+        <option value="5">Slingshot Boost</option>
+      </select>
+
+      <label for="colorSelect">Bubble Color:</label>
+      <select id="colorSelect">
+        <option value="1">Distance</option>
+        <option value="2">Mass</option>
+        <option value="3">Temp.</option>
+        <option value="4">Radius</option>
+        <option value="5">Slingshot Boost</option>
+      </select>
+
+      <button id="updateBtn">Update Chart</button>
+    </div>
+
+    <!-- Div where the BubbleChart will be rendered -->
     <div id="chart_div" style="width: 1280px; height: 720px;"></div>
+
+    <script type="text/javascript">
+      // Add an event listener for the Update button.
+      document.getElementById("updateBtn").addEventListener("click", function(){
+          updateChart();
+      });
+    </script>
+
   </body>
 </html>
